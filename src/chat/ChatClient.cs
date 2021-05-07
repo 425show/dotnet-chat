@@ -5,6 +5,7 @@ namespace chat
 {
     public class ChatClient
     {
+        string _hubUrl = "https://localhost:5001/hubs/chat";
         private HubConnection _connection;
 
         public static ChatClient Instance { get; private set; }
@@ -14,10 +15,12 @@ namespace chat
             Instance = new ChatClient();
         }
         
-        public async Task Connect()
+        public async Task Connect(string accessToken)
         {
             _connection = new HubConnectionBuilder()
-                .WithUrl("https://localhost:5001/hubs/chat")
+                .WithUrl(_hubUrl, options => {
+                    options.AccessTokenProvider = () => Task.FromResult(accessToken);
+                })
                 .Build();
 
             await _connection.StartAsync();
