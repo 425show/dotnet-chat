@@ -21,7 +21,7 @@ namespace chat
         {
             if(input.StartsWith("connect", StringComparison.OrdinalIgnoreCase))
             {
-                ConnectCommand.HandleCommand(input);
+                ConnectCommand.HandleCommand(input).Wait();
             }
             if(input.StartsWith("receive", StringComparison.OrdinalIgnoreCase))
             {
