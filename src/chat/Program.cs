@@ -13,69 +13,33 @@ namespace chat
 {
     class Program
     {
-        static string _accessToken = string.Empty;
         static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args);
         static async Task Main(string[] args)
         {
             DotNetChatOptions options = new();
+            IConfigurationSection optionsSection = null;
 
-            CreateHostBuilder(args)
-                .ConfigureAppConfiguration((hostingContext, configuration) =>
+            var host = CreateHostBuilder(args)
+                .ConfigureAppConfiguration((hostingContext, configurationBuilder) =>
                 {
-                    options = configuration
-                                .Build()
-                                    .GetSection(nameof(DotNetChatOptions))
-                                    .Get<DotNetChatOptions>();
+                    optionsSection = configurationBuilder.Build().GetSection(nameof(DotNetChatOptions));
+                    options = optionsSection.Get<DotNetChatOptions>();
+                })
+                .ConfigureServices(services => 
+                {
+                    services.AddSingleton<CommandHandler>();
+                    services.AddSingleton<AccessTokenFactory>();
+                    services.Configure<DotNetChatOptions>(optionsSection);
                 })
                 .Build();
 
-            IPublicClientApplication app = PublicClientApplicationBuilder
-                .Create(options.ClientId)
-                .WithRedirectUri(options.RedirectUrl)
-                .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
-                .Build();
-
-            AuthenticationResult result;
-            var accounts = await app.GetAccountsAsync();
-            var scopes = new string[] { options.ChatScope };
-
-            try
-            {
-                result = await app.AcquireTokenSilent(scopes,
-                    accounts.FirstOrDefault()).ExecuteAsync();
-            }
-            catch (MsalUiRequiredException)
-            {
-                result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
-            }
-
-            if (result != null)
-            {
-                _accessToken = result.AccessToken;
-            }
+            await host.Services.GetService<AccessTokenFactory>().Authenticate();
 
             while (true)
             {
                 Console.WriteLine("Enter Command:");
-
                 var input = Console.ReadLine();
-                HandleInput(input);
-            }
-        }
-
-        static void HandleInput(string input)
-        {
-            if (input.StartsWith("connect", StringComparison.OrdinalIgnoreCase))
-            {
-                ConnectCommand.HandleCommand(input, _accessToken).Wait();
-            }
-            if (input.StartsWith("receive", StringComparison.OrdinalIgnoreCase))
-            {
-                ReceiveCommand.HandleCommand(input);
-            }
-            if (input.StartsWith("say", StringComparison.OrdinalIgnoreCase))
-            {
-                SayCommand.HandleCommand(input);
+                host.Services.GetService<CommandHandler>().HandleInput(input);
             }
         }
     }
