@@ -38,6 +38,9 @@ namespace chat
             catch (MsalUiRequiredException)
             {
                 result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
+
+                // for worker it'd be
+                // string redirectUri = "https://myapp.azurewebsites.net"; IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(clientId) .WithClientSecret(clientSecret) .WithRedirectUri(redirectUri ) .Build();
             }
 
             if (result != null)
