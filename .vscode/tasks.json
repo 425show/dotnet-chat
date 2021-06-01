@@ -7,14 +7,14 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/chat/chat.csproj",
+                "${workspaceFolder}/dotnet-chat.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish",
+            "label": "publish client",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -26,7 +26,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "watch",
+            "label": "watch client",
             "command": "dotnet",
             "type": "process",
             "args": [
