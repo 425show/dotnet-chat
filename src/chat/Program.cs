@@ -26,6 +26,7 @@ public class Program
                 })
                 .ConfigureServices(services =>
                 {
+                    services.AddSingleton<ChatClient>();
                     services.AddSingleton<CommandHandler>();
                     services.AddSingleton<AccessTokenFactory>();
                     services.Configure<DotNetChatOptions>(optionsSection);
@@ -91,9 +92,16 @@ public class Program
     static void AddNewStatusBarItemOnTheFly()
     {
         var currentItems = statusBar.Items.ToList();
-        currentItems.Insert(2, new StatusItem(Key.F3, "~F3~ Connect", () => { }));
+        currentItems.Insert(2, new StatusItem(Key.F3, "~F3~ Connect", async () => await ConnectToChatHub()));
         statusBar.Items = currentItems.ToArray();
         Application.Refresh();
+    }
+
+    static async Task ConnectToChatHub()
+    {
+        var chatClient = HostRunner.Host.Services.GetService<ChatClient>();
+        var token = HostRunner.Host.Services.GetService<AccessTokenFactory>().GetAccessToken();
+        await chatClient.Connect(token);
     }
 
     static void Main()

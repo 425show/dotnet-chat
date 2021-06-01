@@ -14,10 +14,6 @@ namespace chat
 
         public void HandleInput(string input)
         {
-            if (input.StartsWith("connect", StringComparison.OrdinalIgnoreCase))
-            {
-                ConnectCommand.HandleCommand(input, _accessTokenFactory.GetAccessToken()).Wait();
-            }
             if (input.StartsWith("receive", StringComparison.OrdinalIgnoreCase))
             {
                 ReceiveCommand.HandleCommand(input);
