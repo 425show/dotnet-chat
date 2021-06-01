@@ -17,7 +17,7 @@ namespace chat.web.Hubs
         {
             this.logger = logger;
         }
-        
+
         public async Task SendMessage(string message)
         {
             await Clients.All.SendAsync("messageReceived", new {
@@ -26,11 +26,13 @@ namespace chat.web.Hubs
             });
         }
 
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
             var username = this.Context.User.Identity.Name;
             logger.LogInformation($"{username} just logged in and connected");
-            return Task.CompletedTask;
+            await Clients.Others.SendAsync("userConnected", new {
+                username = username
+            });
         }
     }
 }

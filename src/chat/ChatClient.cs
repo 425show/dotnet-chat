@@ -28,8 +28,8 @@ namespace chat
 
         public async Task Disconnect()
         {
-            if(_connection != null && _connection.State == HubConnectionState.Connected)
-            await _connection.DisposeAsync();
+            if(_connection != null && _connection.State == HubConnectionState.Connected) 
+                await _connection.DisposeAsync();
         }
     }
 }
