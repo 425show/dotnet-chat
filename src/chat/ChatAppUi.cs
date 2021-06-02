@@ -12,6 +12,10 @@ namespace chat
     {
         private static StatusBar StatusBar;
         private static Toplevel ApplicationTop;
+        private static FrameView BottomPane;
+        private static FrameView LeftPane;
+        private static FrameView RightPane;
+        private static Window Window;
 
         internal static void Run()
         {
@@ -24,18 +28,17 @@ namespace chat
             Application.HeightAsBuffer = true;
             ApplicationTop = Application.Top;
 
-            int margin = 3;
+            int margin = 1;
 
-            var win = new Window("welcome to dotnet-chat")
+            Window = new Window("welcome to dotnet-chat")
             {
                 X = 1,
                 Y = 1,
-
                 Width = Dim.Fill() - margin,
                 Height = Dim.Fill() - margin
             };
 
-            win.KeyPress += Win_KeyPress;
+            Window.KeyPress += Win_KeyPress;
 
             StatusBar = new StatusBar(new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Help", () => {}),
@@ -43,7 +46,12 @@ namespace chat
                 new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
             });
 
-            ApplicationTop.Add(win, StatusBar);
+            // add all the ui components to the display
+            ApplicationTop.Add(Window);
+
+            DrawFrameViews();
+
+            ApplicationTop.Add(StatusBar);
             Application.Run(ApplicationTop);
         }
 
@@ -99,6 +107,62 @@ namespace chat
                 StatusBar.Items = currentItems.ToArray();
                 StatusBar.SetNeedsDisplay();
             }
+        }
+
+        private static void DrawFrameViews()
+        {
+            LeftPane = new FrameView("Users")
+            {
+                X = 0,
+                Y = 0,
+                Width = 40,
+                Height = Dim.Fill(5),
+                CanFocus = true,
+                Title = "Users online"
+            };
+
+            RightPane = new FrameView("Chat")
+            {
+                X = 40,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(5),
+                CanFocus = false,
+            };
+
+            BottomPane = new FrameView("Bottom")
+            {
+                X = 0,
+                Y = 29,
+                Title = "Type your message and hit <Enter> to send:",
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                CanFocus = true
+            };
+
+            var s = "Hello world!";
+
+            var textField = new TextField(s)
+            {
+                X = 1,
+                Y = 1,
+                Width = Dim.Percent(98),
+            };
+
+            textField.KeyPress += (args) =>
+            {
+                if (args.KeyEvent.Key == Key.Enter)
+                {
+                    var messageToSend = textField.Text;
+                    textField.Text = "";
+                }
+            };
+
+            BottomPane.Add(textField);
+
+            Window.Add(LeftPane);
+            Window.Add(RightPane);
+            Window.Add(BottomPane);
         }
 
         private static void Win_KeyPress(View.KeyEventEventArgs e)
