@@ -3,26 +3,26 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace chat
 {
-    public class ChatClient
+    public class ChatHubClient
     {
         string _hubUrl = "https://localhost:5001/hubs/chat";
-        private HubConnection _connection;
+        internal HubConnection Connection;
         public async Task Connect(string accessToken)
         {
-            _connection = new HubConnectionBuilder()
+            Connection = new HubConnectionBuilder()
                 .WithUrl(_hubUrl, options =>
                 {
                     options.AccessTokenProvider = () => Task.FromResult(accessToken);
                 })
                 .Build();
 
-            await _connection.StartAsync();
+            await Connection.StartAsync();
         }
 
         public async Task Disconnect()
         {
-            if (_connection != null && _connection.State == HubConnectionState.Connected)
-                await _connection.DisposeAsync();
+            if (Connection != null && Connection.State == HubConnectionState.Connected)
+                await Connection.DisposeAsync();
         }
     }
 }

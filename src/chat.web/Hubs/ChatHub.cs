@@ -20,7 +20,8 @@ namespace chat.web.Hubs
 
         public async Task SendMessage(string message)
         {
-            await Clients.All.SendAsync("messageReceived", new {
+            await Clients.All.SendAsync("messageReceived", new
+            {
                 text = message,
                 username = this.Context.User.Identity.Name
             });
@@ -30,7 +31,19 @@ namespace chat.web.Hubs
         {
             var username = this.Context.User.Identity.Name;
             logger.LogInformation($"{username} just logged in and connected");
-            await Clients.Others.SendAsync("userConnected", new {
+            await Clients.Others.SendAsync("userConnected", new
+            {
+                username = username
+            });
+        }
+
+        public override async Task OnDisconnectedAsync(System.Exception exception)
+        {
+            var username = this.Context.User.Identity.Name;
+            logger.LogInformation($"{username} just disconnected");
+
+            await Clients.Others.SendAsync("userDisconnected", new
+            {
                 username = username
             });
         }
