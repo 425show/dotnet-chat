@@ -55,26 +55,7 @@ namespace chat
         public event Action<ActiveUserListChangedEventArgs> ActiveUserListChanged;
     }
 
-    public class UserPresenceChangeEventArgs : EventArgs
-    {
-        public UserPresenceChangeEventArgs(string username, bool isSignedIn = true)
-        {
-            this.Username = username;
-            this.IsSignedIn = isSignedIn;
-        }
+    public record UserPresenceChangeEventArgs(string Username, bool IsSignedIn = true);
 
-        public string Username { get; set; }
-
-        public bool IsSignedIn { get; set; } = true;
-    }
-
-    public class ActiveUserListChangedEventArgs : EventArgs
-    {
-        public ActiveUserListChangedEventArgs(IEnumerable<string> activeUsers)
-        {
-            ActiveUsers = activeUsers;
-        }
-
-        public IEnumerable<string> ActiveUsers { get; set; }
-    }
+    public record ActiveUserListChangedEventArgs(IEnumerable<string> ActiveUsers);
 }
