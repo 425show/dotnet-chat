@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Terminal.Gui;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 
 namespace chat
 {
@@ -14,8 +15,11 @@ namespace chat
         private static Toplevel ApplicationTop;
         private static FrameView BottomPane;
         private static FrameView LeftPane;
+        private static List<string> UserList;
+        private static ListView UserListView;
         private static FrameView RightPane;
-        private static Window Window;
+
+        public static ChatHubClient ChatClient { get; private set; }
 
         internal static void Run()
         {
@@ -28,31 +32,27 @@ namespace chat
             Application.HeightAsBuffer = true;
             ApplicationTop = Application.Top;
 
-            int margin = 1;
-
-            Window = new Window("welcome to dotnet-chat")
-            {
-                X = 1,
-                Y = 1,
-                Width = Dim.Fill() - margin,
-                Height = Dim.Fill() - margin
-            };
-
-            Window.KeyPress += Win_KeyPress;
-
             StatusBar = new StatusBar(new StatusItem[] {
                 new StatusItem(Key.F1, "~F1~ Help", () => {}),
                 new StatusItem(Key.F2, "~F2~ Authenticate", async () => await Authenticate()),
                 new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
             });
 
-            // add all the ui components to the display
-            ApplicationTop.Add(Window);
+            StatusBar.KeyPress += StatusBar_KeyPress;
 
             DrawFrameViews();
 
             ApplicationTop.Add(StatusBar);
             Application.Run(ApplicationTop);
+        }
+        private static void StatusBar_KeyPress(View.KeyEventEventArgs e)
+        {
+            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
+            {
+                case Key.CtrlMask | Key.T:
+                    e.Handled = true;
+                    break;
+            }
         }
 
         private static bool ConfirmQuit()
@@ -89,35 +89,69 @@ namespace chat
             StatusBar.SetNeedsDisplay();
         }
 
+        protected static void OnActiveUserListChanged(ActiveUserListChangedEventArgs args)
+        {
+            UserList.Clear();
+            args.ActiveUsers.OrderBy(x => x).ToList().ForEach(_ => UserList.Add(_));
+            UserListView.SetNeedsDisplay();
+        }
+
         private static async Task ConnectToChatHub()
         {
-            var chatClient = GenericHostRunner.Host.Services.GetService<ChatHubClient>();
-            var token = GenericHostRunner.Host.Services.GetService<AccessTokenFactory>().GetAccessToken();
-            await chatClient.Connect(token);
+            ChatClient = GenericHostRunner.Host.Services.GetService<ChatHubClient>();
 
-            if (chatClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
+            ChatClient.ActiveUserListChanged += OnActiveUserListChanged;
+
+            ChatClient.UserPresenceChanged += (args) =>
+            {
+                if (args.IsSignedIn && !UserList.Contains(args.Username))
+                {
+                }
+
+                if (!args.IsSignedIn && UserList.Contains(args.Username))
+                {
+                }
+            };
+
+            var token = GenericHostRunner.Host.Services.GetService<AccessTokenFactory>().GetAccessToken();
+
+            await ChatClient.Connect(token);
+
+            if (ChatClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
             {
                 var currentItems = StatusBar.Items.ToList();
                 currentItems.RemoveAt(1);
                 currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Disconnect", async () =>
                 {
-                    await chatClient.Disconnect();
+                    await ChatClient.Disconnect();
                     AddConnectStatusBarCommand();
                 }));
                 StatusBar.Items = currentItems.ToArray();
                 StatusBar.SetNeedsDisplay();
+
+                await ChatClient.SignIn();
             }
         }
 
         private static void DrawFrameViews()
         {
+            UserList = new List<string>();
+            UserListView = new ListView(UserList)
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(0),
+                Height = Dim.Fill(0),
+                AllowsMarking = false,
+                CanFocus = true
+            };
+
             LeftPane = new FrameView("Users")
             {
                 X = 0,
                 Y = 0,
                 Width = 40,
-                Height = Dim.Fill(5),
-                CanFocus = true,
+                Height = Dim.Percent(82),
                 Title = "Users online"
             };
 
@@ -126,23 +160,20 @@ namespace chat
                 X = 40,
                 Y = 0,
                 Width = Dim.Fill(),
-                Height = Dim.Fill(5),
-                CanFocus = false,
+                Height = Dim.Percent(82),
+                Title = "Chat messages"
             };
 
             BottomPane = new FrameView("Bottom")
             {
                 X = 0,
-                Y = 29,
+                Y = Pos.Bottom(LeftPane),
                 Title = "Type your message and hit <Enter> to send:",
                 Width = Dim.Fill(),
-                Height = Dim.Fill(),
-                CanFocus = true
+                Height = Dim.Percent(18),
             };
 
-            var s = "Hello world!";
-
-            var textField = new TextField(s)
+            var textField = new TextField("Hello world!")
             {
                 X = 1,
                 Y = 1,
@@ -160,19 +191,12 @@ namespace chat
 
             BottomPane.Add(textField);
 
-            Window.Add(LeftPane);
-            Window.Add(RightPane);
-            Window.Add(BottomPane);
-        }
+            LeftPane.Add(UserListView);
+            ApplicationTop.Add(LeftPane);
+            ApplicationTop.Add(RightPane);
+            ApplicationTop.Add(BottomPane);
 
-        private static void Win_KeyPress(View.KeyEventEventArgs e)
-        {
-            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
-            {
-                case Key.CtrlMask | Key.T:
-                    e.Handled = true;
-                    break;
-            }
+            textField.SetFocus();
         }
     }
 }

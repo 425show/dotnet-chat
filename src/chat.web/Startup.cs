@@ -28,6 +28,10 @@ namespace chat.web
             services.AddRazorPages();
             services.AddSignalR();
             services.AddMicrosoftIdentityWebApiAuthentication(Configuration);
+
+            // todo: add custom middleware to make this easier
+            services.AddMemoryCache();
+            services.AddSingleton<AppCacheService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
