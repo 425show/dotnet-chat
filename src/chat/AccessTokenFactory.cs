@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
@@ -28,12 +30,11 @@ namespace chat
 
             AuthenticationResult result;
             var accounts = await app.GetAccountsAsync();
-            var scopes = new string[] { _options.ChatScope };
+            var scopes = new string[] { _options.ChatScope, "User.Read" };
 
             try
             {
-                result = await app.AcquireTokenSilent(scopes,
-                    accounts.FirstOrDefault()).ExecuteAsync();
+                result = await app.AcquireTokenSilent(scopes, accounts.FirstOrDefault()).ExecuteAsync();
             }
             catch (MsalUiRequiredException)
             {

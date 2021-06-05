@@ -14,14 +14,10 @@ namespace chat
 
         public void HandleInput(string input)
         {
-            if (input.StartsWith("receive", StringComparison.OrdinalIgnoreCase))
-            {
-                ReceiveCommand.HandleCommand(input);
-            }
-            if (input.StartsWith("say", StringComparison.OrdinalIgnoreCase))
-            {
-                SayCommand.HandleCommand(input);
-            }
+            // todo: implement an attribute method of handling custom commands
+            // todo: handle any command before the last line of this method
+            // todo: the last line of this method is essentially "the user said something publicly"
+            SayCommand.HandleCommand(input);
         }
     }
 }

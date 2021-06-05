@@ -1,142 +1,43 @@
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Terminal.Gui;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Collections.Generic;
+using static Terminal.Gui.View;
 
 namespace chat
 {
     public class ChatAppUi
     {
-        private static StatusBar StatusBar;
-        private static Toplevel ApplicationTop;
-        private static FrameView BottomPane;
-        private static FrameView LeftPane;
-        private static List<string> UserList;
-        private static ListView UserListView;
-        private static FrameView RightPane;
+        private StatusBar statusBar;
+        private FrameView bottomPane;
+        private TextField messageTextBox;
+        private FrameView leftPane;
+        private List<string> userList;
+        private ListView userListView;
+        private FrameView rightPane;
+        private readonly AccessTokenFactory accessTokenFactory;
+        private readonly Toplevel applicationTop;
+        private ChatHubClient chatHubClient;
 
-        public static ChatHubClient ChatClient { get; private set; }
-
-        internal static void Run()
+        public ChatAppUi(AccessTokenFactory accessTokenFactory,
+            ChatHubClient chatHubClient,
+            Toplevel applicationTop)
         {
-            if (Debugger.IsAttached)
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("en-US");
-
-            Application.UseSystemConsole = true;
-
-            Application.Init();
-            Application.HeightAsBuffer = true;
-            ApplicationTop = Application.Top;
-
-            StatusBar = new StatusBar(new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Help", () => {}),
-                new StatusItem(Key.F2, "~F2~ Authenticate", async () => await Authenticate()),
-                new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
-            });
-
-            StatusBar.KeyPress += StatusBar_KeyPress;
-
-            DrawFrameViews();
-
-            ApplicationTop.Add(StatusBar);
-            Application.Run(ApplicationTop);
-        }
-        private static void StatusBar_KeyPress(View.KeyEventEventArgs e)
-        {
-            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
-            {
-                case Key.CtrlMask | Key.T:
-                    e.Handled = true;
-                    break;
-            }
+            this.accessTokenFactory = accessTokenFactory;
+            this.chatHubClient = chatHubClient;
+            this.applicationTop = applicationTop;
         }
 
-        private static bool ConfirmQuit()
+        public void Paint()
         {
-            var n = MessageBox.Query("Quit Demo", "Are you sure you want to quit?", "Yes", "No");
-            return n == 0;
+            SetupFrames();
+            SetupStatusBar();
         }
 
-        private static void Quit()
+        private void SetupFrames()
         {
-            if (ConfirmQuit())
-            {
-                Program.ChatAppUiRunning = null; // this is a hack, open to suggestions
-                ApplicationTop.Running = false;
-            }
-        }
-
-        private static async Task Authenticate()
-        {
-            var factory = GenericHostRunner.Host.Services.GetService<AccessTokenFactory>();
-            await factory.Authenticate();
-            if (!string.IsNullOrEmpty(factory.GetAccessToken()))
-            {
-                AddConnectStatusBarCommand();
-            }
-        }
-
-        private static void AddConnectStatusBarCommand()
-        {
-            var currentItems = StatusBar.Items.ToList();
-            currentItems.RemoveAt(1);
-            currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Connect", async () => await ConnectToChatHub()));
-            StatusBar.Items = currentItems.ToArray();
-            StatusBar.SetNeedsDisplay();
-        }
-
-        protected static void OnActiveUserListChanged(ActiveUserListChangedEventArgs args)
-        {
-            UserList.Clear();
-            args.ActiveUsers.OrderBy(x => x).ToList().ForEach(_ => UserList.Add(_));
-            UserListView.SetNeedsDisplay();
-        }
-
-        private static async Task ConnectToChatHub()
-        {
-            ChatClient = GenericHostRunner.Host.Services.GetService<ChatHubClient>();
-
-            ChatClient.ActiveUserListChanged += OnActiveUserListChanged;
-
-            ChatClient.UserPresenceChanged += (args) =>
-            {
-                if (args.IsSignedIn && !UserList.Contains(args.Username))
-                {
-                }
-
-                if (!args.IsSignedIn && UserList.Contains(args.Username))
-                {
-                }
-            };
-
-            var token = GenericHostRunner.Host.Services.GetService<AccessTokenFactory>().GetAccessToken();
-
-            await ChatClient.Connect(token);
-
-            if (ChatClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
-            {
-                var currentItems = StatusBar.Items.ToList();
-                currentItems.RemoveAt(1);
-                currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Disconnect", async () =>
-                {
-                    await ChatClient.Disconnect();
-                    AddConnectStatusBarCommand();
-                }));
-                StatusBar.Items = currentItems.ToArray();
-                StatusBar.SetNeedsDisplay();
-
-                await ChatClient.SignIn();
-            }
-        }
-
-        private static void DrawFrameViews()
-        {
-            UserList = new List<string>();
-            UserListView = new ListView(UserList)
+            userList = new List<string>();
+            userListView = new ListView(userList)
             {
                 X = 0,
                 Y = 0,
@@ -146,7 +47,7 @@ namespace chat
                 CanFocus = true
             };
 
-            LeftPane = new FrameView("Users")
+            leftPane = new FrameView("Users")
             {
                 X = 0,
                 Y = 0,
@@ -154,8 +55,9 @@ namespace chat
                 Height = Dim.Percent(82),
                 Title = "Users online"
             };
+            leftPane.Add(userListView);
 
-            RightPane = new FrameView("Chat")
+            rightPane = new FrameView("Chat")
             {
                 X = 40,
                 Y = 0,
@@ -164,39 +66,138 @@ namespace chat
                 Title = "Chat messages"
             };
 
-            BottomPane = new FrameView("Bottom")
+            bottomPane = new FrameView("Bottom")
             {
                 X = 0,
-                Y = Pos.Bottom(LeftPane),
+                Y = Pos.Bottom(leftPane),
                 Title = "Type your message and hit <Enter> to send:",
                 Width = Dim.Fill(),
                 Height = Dim.Percent(18),
             };
 
-            var textField = new TextField("Hello world!")
+            messageTextBox = new TextField("Hello world!")
             {
                 X = 1,
                 Y = 1,
-                Width = Dim.Percent(98),
+                Width = Dim.Percent(98)
             };
+            messageTextBox.KeyPress += OnMessageBoxKeyPress;
+            bottomPane.Add(messageTextBox);
 
-            textField.KeyPress += (args) =>
+            applicationTop.Add(leftPane);
+            applicationTop.Add(rightPane);
+            applicationTop.Add(bottomPane);
+
+            messageTextBox.SetFocus();
+        }
+
+        protected void OnMessageBoxKeyPress(KeyEventEventArgs args)
+        {
+            if (args.KeyEvent.Key == Key.Enter)
             {
-                if (args.KeyEvent.Key == Key.Enter)
+                var messageToSend = messageTextBox.Text;
+                messageTextBox.Text = "";
+            }
+        }
+
+        private void SetupStatusBar()
+        {
+            statusBar = new StatusBar(new StatusItem[] {
+                new StatusItem(Key.F1, "~F1~ Help", () => {}),
+                new StatusItem(Key.F2, "~F2~ Authenticate", async () => await Authenticate()),
+                new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
+            });
+
+            statusBar.KeyPress += StatusBar_KeyPress;
+
+            applicationTop.Add(statusBar);
+        }
+
+        private void StatusBar_KeyPress(View.KeyEventEventArgs e)
+        {
+            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
+            {
+                case Key.CtrlMask | Key.T:
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private bool ConfirmQuit()
+        {
+            var n = MessageBox.Query("Quit Demo", "Are you sure you want to quit?", "Yes", "No");
+            return n == 0;
+        }
+
+        private void Quit()
+        {
+            if (ConfirmQuit())
+            {
+                Program.UiThread = null; // this is a hack, open to suggestions
+                applicationTop.Running = false;
+            }
+        }
+
+        private async Task Authenticate()
+        {
+            await accessTokenFactory.Authenticate();
+            if (!string.IsNullOrEmpty(accessTokenFactory.GetAccessToken()))
+            {
+                AddConnectStatusBarCommand();
+            }
+        }
+
+        private void AddConnectStatusBarCommand()
+        {
+            var currentItems = statusBar.Items.ToList();
+            currentItems.RemoveAt(1);
+            currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Connect", async () => await ConnectToChatHub()));
+            statusBar.Items = currentItems.ToArray();
+            statusBar.SetNeedsDisplay();
+        }
+
+        protected void OnActiveUserListChanged(ActiveUserListChangedEventArgs args)
+        {
+            userList.Clear();
+            args.ActiveUsers.OrderBy(x => x).ToList().ForEach(_ => userList.Add(_));
+            userListView.SetNeedsDisplay();
+        }
+
+        protected void OnUserPresenceChanged(UserPresenceChangeEventArgs args)
+        {
+            if (args.IsSignedIn && !userList.Contains(args.Username))
+            {
+                // these were replaced with ActiveUserListChanged but there's gotta be value here
+            }
+
+            if (!args.IsSignedIn && userList.Contains(args.Username))
+            {
+                // these were replaced with ActiveUserListChanged but there's gotta be value here
+            }
+        }
+
+        private async Task ConnectToChatHub()
+        {
+            chatHubClient.ActiveUserListChanged += OnActiveUserListChanged;
+
+            var token = accessTokenFactory.GetAccessToken();
+
+            await chatHubClient.Connect(token);
+
+            if (chatHubClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
+            {
+                var currentItems = statusBar.Items.ToList();
+                currentItems.RemoveAt(1);
+                currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Disconnect", async () =>
                 {
-                    var messageToSend = textField.Text;
-                    textField.Text = "";
-                }
-            };
+                    await chatHubClient.Disconnect();
+                    AddConnectStatusBarCommand();
+                }));
+                statusBar.Items = currentItems.ToArray();
+                statusBar.SetNeedsDisplay();
 
-            BottomPane.Add(textField);
-
-            LeftPane.Add(UserListView);
-            ApplicationTop.Add(LeftPane);
-            ApplicationTop.Add(RightPane);
-            ApplicationTop.Add(BottomPane);
-
-            textField.SetFocus();
+                await chatHubClient.SignIn();
+            }
         }
     }
 }
