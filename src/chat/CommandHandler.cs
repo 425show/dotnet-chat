@@ -5,13 +5,6 @@ namespace chat
 {
     public class CommandHandler
     {
-        private readonly AccessTokenFactory _accessTokenFactory;
-
-        public CommandHandler(AccessTokenFactory accessTokenFactory)
-        {
-            _accessTokenFactory = accessTokenFactory;
-        }
-
         public void HandleInput(string input)
         {
             // todo: implement an attribute method of handling custom commands
