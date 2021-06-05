@@ -26,6 +26,8 @@ namespace chat
             this.accessTokenFactory = accessTokenFactory;
             this.chatHubClient = chatHubClient;
             this.applicationTop = applicationTop;
+
+            this.chatHubClient.ActiveUserListChanged += OnActiveUserListChanged;
         }
 
         public void Paint()
@@ -102,15 +104,59 @@ namespace chat
 
         private void SetupStatusBar()
         {
-            statusBar = new StatusBar(new StatusItem[] {
-                new StatusItem(Key.F1, "~F1~ Help", () => {}),
-                new StatusItem(Key.F2, "~F2~ Authenticate", async () => await Authenticate()),
-                new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
-            });
+            var defaultItems = new StatusItem[] {
+                    new StatusItem(Key.F1, "~F1~ Help", () => {}),
+                    new StatusItem(Key.F2, "~F2~ Connect", async () => await AuthenticateAndConnect()),
+                    new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit ())
+                };
 
-            statusBar.KeyPress += StatusBar_KeyPress;
+            if (statusBar == null)
+            {
+                statusBar = new StatusBar(defaultItems);
+                statusBar.KeyPress += StatusBar_KeyPress;
+                applicationTop.Add(statusBar);
+            }
+            else
+            {
+                statusBar.Items = defaultItems;
+            }
 
-            applicationTop.Add(statusBar);
+            statusBar.SetNeedsDisplay();
+        }
+
+        private async Task AuthenticateAndConnect()
+        {
+            if (string.IsNullOrEmpty(accessTokenFactory.GetAccessToken()))
+            {
+                await accessTokenFactory.Authenticate();
+            }
+
+            if (!string.IsNullOrEmpty(accessTokenFactory.GetAccessToken()))
+            {
+                await ConnectToChatHub();
+            }
+        }
+
+        private async Task ConnectToChatHub()
+        {
+            var token = accessTokenFactory.GetAccessToken();
+
+            await chatHubClient.Connect(token);
+
+            if (chatHubClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
+            {
+                var currentItems = statusBar.Items.ToList();
+                currentItems.RemoveAt(1);
+                currentItems.Insert(1, new StatusItem(Key.F2, "~F2~ Disconnect", async () =>
+                {
+                    await chatHubClient.Disconnect();
+                    SetupStatusBar();
+                }));
+                statusBar.Items = currentItems.ToArray();
+                statusBar.SetNeedsDisplay();
+
+                await chatHubClient.SignIn();
+            }
         }
 
         private void StatusBar_KeyPress(View.KeyEventEventArgs e)
@@ -138,24 +184,6 @@ namespace chat
             }
         }
 
-        private async Task Authenticate()
-        {
-            await accessTokenFactory.Authenticate();
-            if (!string.IsNullOrEmpty(accessTokenFactory.GetAccessToken()))
-            {
-                AddConnectStatusBarCommand();
-            }
-        }
-
-        private void AddConnectStatusBarCommand()
-        {
-            var currentItems = statusBar.Items.ToList();
-            currentItems.RemoveAt(1);
-            currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Connect", async () => await ConnectToChatHub()));
-            statusBar.Items = currentItems.ToArray();
-            statusBar.SetNeedsDisplay();
-        }
-
         protected void OnActiveUserListChanged(ActiveUserListChangedEventArgs args)
         {
             userList.Clear();
@@ -173,30 +201,6 @@ namespace chat
             if (!args.IsSignedIn && userList.Contains(args.Username))
             {
                 // these were replaced with ActiveUserListChanged but there's gotta be value here
-            }
-        }
-
-        private async Task ConnectToChatHub()
-        {
-            chatHubClient.ActiveUserListChanged += OnActiveUserListChanged;
-
-            var token = accessTokenFactory.GetAccessToken();
-
-            await chatHubClient.Connect(token);
-
-            if (chatHubClient.Connection.State == Microsoft.AspNetCore.SignalR.Client.HubConnectionState.Connected)
-            {
-                var currentItems = statusBar.Items.ToList();
-                currentItems.RemoveAt(1);
-                currentItems.Insert(1, new StatusItem(Key.F3, "~F3~ Disconnect", async () =>
-                {
-                    await chatHubClient.Disconnect();
-                    AddConnectStatusBarCommand();
-                }));
-                statusBar.Items = currentItems.ToArray();
-                statusBar.SetNeedsDisplay();
-
-                await chatHubClient.SignIn();
             }
         }
     }
