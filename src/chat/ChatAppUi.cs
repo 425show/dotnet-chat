@@ -17,16 +17,18 @@ namespace chat
         private FrameView rightPane;
         private readonly AccessTokenFactory accessTokenFactory;
         private readonly Toplevel applicationTop;
+        private readonly CommandHandler commandHandler;
         private ChatHubClient chatHubClient;
 
         public ChatAppUi(AccessTokenFactory accessTokenFactory,
             ChatHubClient chatHubClient,
-            Toplevel applicationTop)
+            Toplevel applicationTop,
+            CommandHandler commandHandler)
         {
             this.accessTokenFactory = accessTokenFactory;
             this.chatHubClient = chatHubClient;
             this.applicationTop = applicationTop;
-
+            this.commandHandler = commandHandler;
             this.chatHubClient.ActiveUserListChanged += OnActiveUserListChanged;
         }
 
@@ -186,6 +188,7 @@ namespace chat
             if (args.KeyEvent.Key == Key.Enter)
             {
                 var messageToSend = messageTextBox.Text;
+                commandHandler.HandleInput(messageToSend.ToString());
                 messageTextBox.Text = "";
             }
         }

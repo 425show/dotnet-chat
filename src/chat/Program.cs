@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace chat
 {
@@ -33,18 +34,23 @@ namespace chat
                 {
                     optionsSection = configurationBuilder.Build().GetSection(nameof(DotNetChatOptions));
                 })
-                .ConfigureServices(services =>
+                .ConfigureLogging(loggingBuilder =>
                 {
-                    services.AddSingleton<Toplevel>(Application.Top);
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddDebug();
+                })
+                .ConfigureServices((builder, services) =>
+                {
                     services.Configure<DotNetChatOptions>(optionsSection);
+                    services.AddSingleton<Toplevel>(Application.Top);
                     services.AddSingleton<ChatHubClient>();
-                    services.AddSingleton<CommandHandler>();
                     services.AddSingleton<AccessTokenFactory>();
                     services.AddSingleton<ChatAppUi>();
+                    services.AddCommandHandling();
                 })
                 .Build();
 
-            // stasrt the app
+            // start the app
             while (UiThread != null) UiThread.Invoke();
 
             Application.Shutdown();
