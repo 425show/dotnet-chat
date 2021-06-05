@@ -113,7 +113,7 @@ namespace chat
             if (statusBar == null)
             {
                 statusBar = new StatusBar(defaultItems);
-                statusBar.KeyPress += StatusBar_KeyPress;
+                statusBar.KeyPress += OnStatusBarKeyPress;
                 applicationTop.Add(statusBar);
             }
             else
@@ -159,7 +159,7 @@ namespace chat
             }
         }
 
-        private void StatusBar_KeyPress(View.KeyEventEventArgs e)
+        private void OnStatusBarKeyPress(View.KeyEventEventArgs e)
         {
             switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
             {
