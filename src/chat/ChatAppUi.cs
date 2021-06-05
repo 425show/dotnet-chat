@@ -159,16 +159,6 @@ namespace chat
             }
         }
 
-        private void OnStatusBarKeyPress(View.KeyEventEventArgs e)
-        {
-            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
-            {
-                case Key.CtrlMask | Key.T:
-                    e.Handled = true;
-                    break;
-            }
-        }
-
         private bool ConfirmQuit()
         {
             var n = MessageBox.Query("Quit Demo", "Are you sure you want to quit?", "Yes", "No");
@@ -181,6 +171,15 @@ namespace chat
             {
                 Program.UiThread = null; // this is a hack, open to suggestions
                 applicationTop.Running = false;
+            }
+        }
+        private void OnStatusBarKeyPress(View.KeyEventEventArgs e)
+        {
+            switch (ShortcutHelper.GetModifiersKey(e.KeyEvent))
+            {
+                case Key.CtrlMask | Key.T:
+                    e.Handled = true;
+                    break;
             }
         }
 
