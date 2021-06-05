@@ -93,15 +93,6 @@ namespace chat
             messageTextBox.SetFocus();
         }
 
-        protected void OnMessageBoxKeyPress(KeyEventEventArgs args)
-        {
-            if (args.KeyEvent.Key == Key.Enter)
-            {
-                var messageToSend = messageTextBox.Text;
-                messageTextBox.Text = "";
-            }
-        }
-
         private void SetupStatusBar()
         {
             var defaultItems = new StatusItem[] {
@@ -188,6 +179,15 @@ namespace chat
             userList.Clear();
             args.ActiveUsers.OrderBy(x => x).ToList().ForEach(_ => userList.Add(_));
             userListView.SetNeedsDisplay();
+        }
+
+        protected void OnMessageBoxKeyPress(KeyEventEventArgs args)
+        {
+            if (args.KeyEvent.Key == Key.Enter)
+            {
+                var messageToSend = messageTextBox.Text;
+                messageTextBox.Text = "";
+            }
         }
 
         protected void OnUserPresenceChanged(UserPresenceChangeEventArgs args)
