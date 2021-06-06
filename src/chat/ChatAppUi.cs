@@ -59,18 +59,17 @@ namespace chat
                 X = 0,
                 Y = 0,
                 Width = 40,
-                Height = Dim.Percent(82),
+                Height = Dim.Fill() - 8,
                 Title = "Users online"
             };
-            leftPane.Add(userListView);
 
             messageList = new List<string>();
             messageListView = new ListView(messageList)
             {
                 X = 0,
                 Y = 0,
-                Width = Dim.Fill(0),
-                Height = Dim.Fill(0),
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
                 AllowsMarking = false,
                 CanFocus = true
             };
@@ -79,10 +78,9 @@ namespace chat
                 X = 40,
                 Y = 0,
                 Width = Dim.Fill(),
-                Height = Dim.Percent(82),
+                Height = Dim.Fill() - 8,
                 Title = "Chat messages"
             };
-            rightPane.Add(messageListView);
 
             bottomPane = new FrameView("Bottom")
             {
@@ -90,7 +88,7 @@ namespace chat
                 Y = Pos.Bottom(leftPane),
                 Title = "Type your message and hit <Enter> to send:",
                 Width = Dim.Fill(),
-                Height = Dim.Percent(18),
+                Height = Dim.Fill() - 1
             };
 
             messageTextBox = new TextField("Hello world!")
@@ -100,10 +98,14 @@ namespace chat
                 Width = Dim.Percent(98)
             };
             messageTextBox.KeyPress += OnMessageBoxKeyPress;
-            bottomPane.Add(messageTextBox);
 
+            leftPane.Add(userListView);
             applicationTop.Add(leftPane);
+
+            rightPane.Add(messageListView);
             applicationTop.Add(rightPane);
+
+            bottomPane.Add(messageTextBox);
             applicationTop.Add(bottomPane);
 
             messageTextBox.SetFocus();
@@ -193,7 +195,7 @@ namespace chat
         protected void OnActiveUserListChanged(ActiveUserListChangedEventArgs args)
         {
             userList.Clear();
-            args.ActiveUsers.OrderBy(x => x).ToList().ForEach(_ => userList.Add(_));
+            args.ActiveUsers.OrderBy(_ => _.DisplayName).ToList().ForEach(_ => userList.Add(_.DisplayName));
             userListView.SetNeedsDisplay();
         }
 
@@ -208,19 +210,6 @@ namespace chat
                     commandHandler.HandleInput(messageToSend.ToString());
                     messageTextBox.Text = "";
                 }
-            }
-        }
-
-        protected void OnUserPresenceChanged(UserPresenceChangeEventArgs args)
-        {
-            if (args.IsSignedIn && !userList.Contains(args.Username))
-            {
-                // these were replaced with ActiveUserListChanged but there's gotta be value here
-            }
-
-            if (!args.IsSignedIn && userList.Contains(args.Username))
-            {
-                // these were replaced with ActiveUserListChanged but there's gotta be value here
             }
         }
 

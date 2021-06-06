@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using chat.abstractions;
 using Microsoft.AspNetCore.Authorization;
@@ -29,12 +30,16 @@ namespace chat.web.Hubs
             logger.LogInformation($"{username} just logged in and connected");
             await Clients.All.SendAsync("userConnected", username);
 
-            var activeUsers = this.appCacheService.MemoryCache.Get<List<string>>(ACTIVE_USERS);
-            if (!activeUsers.Contains(username))
+            var activeUsers = this.appCacheService.MemoryCache.Get<List<ChatUser>>(ACTIVE_USERS);
+            if (!activeUsers.Any(_ => _.Username == username))
             {
-                activeUsers.Add(username);
+                activeUsers.Add(new ChatUser
+                {
+                    Username = username,
+                    DisplayName = username.Substring(0, username.IndexOf('@'))
+                });
             }
-            this.appCacheService.MemoryCache.Set<List<string>>(ACTIVE_USERS, activeUsers);
+            this.appCacheService.MemoryCache.Set<List<ChatUser>>(ACTIVE_USERS, activeUsers);
             await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
 
@@ -45,12 +50,12 @@ namespace chat.web.Hubs
 
             await Clients.Others.SendAsync("userDisconnected", username);
 
-            var activeUsers = this.appCacheService.MemoryCache.Get<List<string>>(ACTIVE_USERS);
-            if (activeUsers.Contains(username))
+            var activeUsers = this.appCacheService.MemoryCache.Get<List<ChatUser>>(ACTIVE_USERS);
+            if (activeUsers.Any(_ => _.Username == username))
             {
-                activeUsers.Remove(username);
+                activeUsers.Remove(activeUsers.First(_ => _.Username == username));
             }
-            this.appCacheService.MemoryCache.Set<List<string>>(ACTIVE_USERS, activeUsers);
+            this.appCacheService.MemoryCache.Set<List<ChatUser>>(ACTIVE_USERS, activeUsers);
             await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
 

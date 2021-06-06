@@ -29,9 +29,9 @@ namespace chat
                 UserPresenceChanged?.Invoke(new UserPresenceChangeEventArgs(username, true));
             });
 
-            Connection.On<List<string>>("activeUserListUpdated", (usernames) =>
+            Connection.On<List<ChatUser>>("activeUserListUpdated", (users) =>
             {
-                ActiveUserListChanged?.Invoke(new ActiveUserListChangedEventArgs(usernames));
+                ActiveUserListChanged?.Invoke(new ActiveUserListChangedEventArgs(users));
             });
 
             Connection.On<PublicMessage>("publicMessageReceived", (publicMessage) =>
@@ -73,7 +73,7 @@ namespace chat
 
     public record UserPresenceChangeEventArgs(string Username, bool IsSignedIn = true);
 
-    public record ActiveUserListChangedEventArgs(IEnumerable<string> ActiveUsers);
+    public record ActiveUserListChangedEventArgs(IEnumerable<ChatUser> ActiveUsers);
 
     public record PublicMessageReceivedEventArgs(PublicMessage PublicMessage);
 }
