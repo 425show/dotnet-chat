@@ -64,6 +64,14 @@ namespace chat
             }
         }
 
+        public async Task ChangeDisplayName(string displayName)
+        {
+            if (Connection?.State == HubConnectionState.Connected)
+            {
+                await Connection.InvokeAsync("changeDisplayName", displayName);
+            }
+        }
+
         public event Action<UserPresenceChangeEventArgs> UserPresenceChanged;
 
         public event Action<ActiveUserListChangedEventArgs> ActiveUserListChanged;

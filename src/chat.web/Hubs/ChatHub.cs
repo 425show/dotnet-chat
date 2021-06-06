@@ -31,6 +31,7 @@ namespace chat.web.Hubs
             await Clients.All.SendAsync("userConnected", username);
 
             var activeUsers = this.appCacheService.MemoryCache.Get<List<ChatUser>>(ACTIVE_USERS);
+
             if (!activeUsers.Any(_ => _.Username == username))
             {
                 activeUsers.Add(new ChatUser
@@ -39,6 +40,7 @@ namespace chat.web.Hubs
                     DisplayName = username.Substring(0, username.IndexOf('@'))
                 });
             }
+
             this.appCacheService.MemoryCache.Set<List<ChatUser>>(ACTIVE_USERS, activeUsers);
             await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
@@ -51,10 +53,12 @@ namespace chat.web.Hubs
             await Clients.Others.SendAsync("userDisconnected", username);
 
             var activeUsers = this.appCacheService.MemoryCache.Get<List<ChatUser>>(ACTIVE_USERS);
+
             if (activeUsers.Any(_ => _.Username == username))
             {
                 activeUsers.Remove(activeUsers.First(_ => _.Username == username));
             }
+
             this.appCacheService.MemoryCache.Set<List<ChatUser>>(ACTIVE_USERS, activeUsers);
             await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
@@ -71,6 +75,24 @@ namespace chat.web.Hubs
                     DisplayName = username.Substring(0, username.IndexOf('@'))
                 })
             );
+        }
+
+        public async Task ChangeDisplayName(string displayName)
+        {
+            var username = this.Context.User.Identity.Name;
+
+            var activeUsers = this.appCacheService.MemoryCache.Get<List<ChatUser>>(ACTIVE_USERS);
+
+            if (activeUsers.Any(_ => _.Username == username))
+            {
+                var chatUser = activeUsers.First(_ => _.Username == username);
+                chatUser.DisplayName = displayName;
+                activeUsers.Remove(activeUsers.First(_ => _.Username == username));
+                activeUsers.Add(chatUser);
+            }
+
+            this.appCacheService.MemoryCache.Set<List<ChatUser>>(ACTIVE_USERS, activeUsers);
+            await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
     }
 }
