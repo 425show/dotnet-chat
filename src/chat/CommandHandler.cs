@@ -20,9 +20,18 @@ namespace chat
         public Task HandleInput(string input)
         {
             input = $"{input} ";
-            var command = input.Substring(0, input.IndexOf(' '));
-            var commandArgument = input.Substring(command.Length).Trim();
-            commandHandlerLocator.GetCommandHandler(input).HandleInput(commandArgument);
+
+            if (input.StartsWith("--"))
+            {
+                var command = input.Substring(0, input.IndexOf(' '));
+                var commandArgument = input.Substring(command.Length).Trim();
+                commandHandlerLocator.GetCommandHandler(command).HandleInput(commandArgument);
+            }
+            else
+            {
+                commandHandlerLocator.GetCommandHandler().HandleInput(input);
+            }
+
             return Task.CompletedTask;
         }
     }

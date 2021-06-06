@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using chat.abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
@@ -53,13 +54,18 @@ namespace chat.web.Hubs
             await Clients.All.SendAsync("activeUserListUpdated", activeUsers);
         }
 
-        public async Task SendMessage(string message)
+        public async Task SendPublicMessage(string message)
         {
-            await Clients.All.SendAsync("messageReceived", new
-            {
-                text = message,
-                username = this.Context.User.Identity.Name
-            });
+            var username = this.Context.User.Identity.Name;
+            logger.LogInformation($"{username} said {message}");
+            await Clients.All.SendAsync("publicMessageReceived", new PublicMessage(
+                message,
+                new ChatUser
+                {
+                    Username = username,
+                    DisplayName = username.Substring(0, username.IndexOf('@'))
+                })
+            );
         }
     }
 }

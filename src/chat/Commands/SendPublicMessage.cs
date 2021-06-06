@@ -7,16 +7,19 @@ namespace chat.Commands
     public class SendPublicMessage : ICommandHandler
     {
         private readonly ILogger<SendPublicMessage> logger;
+        private readonly ChatHubClient chatHubClient;
 
-        public SendPublicMessage(ILogger<SendPublicMessage> logger)
+        public SendPublicMessage(ILogger<SendPublicMessage> logger,
+            ChatHubClient chatHubClient)
         {
+            this.chatHubClient = chatHubClient;
             this.logger = logger;
         }
 
-        public Task HandleInput(string input)
+        public async Task HandleInput(string input)
         {
-            logger.LogInformation(input);
-            return Task.CompletedTask;
+            logger.LogInformation($"Sending public message {input}");
+            await this.chatHubClient.SendPublicMessage(input);
         }
     }
 }

@@ -33,17 +33,10 @@ namespace chat
             CommandHandlers.Add(name, t);
         }
 
-        public ICommandHandler GetCommandHandler(string input)
+        public ICommandHandler GetCommandHandler(string command = "sendPublicMessage")
         {
-            if (input.StartsWith("--"))
-            {
-                var command = input.Substring(0, input.IndexOf(' '));
-                var commandArgument = input.Substring(command.Length).Trim();
-                if (!CommandHandlers.ContainsKey(command)) return serviceProvider.GetService<SendPublicMessage>();
-                return (ICommandHandler)serviceProvider.GetService(CommandHandlers[command]);
-            }
-
-            return serviceProvider.GetService<SendPublicMessage>();
+            if (!CommandHandlers.ContainsKey(command)) return serviceProvider.GetService<SendPublicMessage>();
+            return (ICommandHandler)serviceProvider.GetService(CommandHandlers[command]);
         }
     }
 }

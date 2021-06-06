@@ -13,6 +13,8 @@ namespace chat
         private TextField messageTextBox;
         private FrameView leftPane;
         private List<string> userList;
+        private List<string> messageList;
+        private ListView messageListView;
         private ListView userListView;
         private FrameView rightPane;
         private readonly AccessTokenFactory accessTokenFactory;
@@ -30,6 +32,7 @@ namespace chat
             this.applicationTop = applicationTop;
             this.commandHandler = commandHandler;
             this.chatHubClient.ActiveUserListChanged += OnActiveUserListChanged;
+            this.chatHubClient.PublicMessageReceived += OnPublicMessageReceived;
         }
 
         public void Paint()
@@ -61,6 +64,16 @@ namespace chat
             };
             leftPane.Add(userListView);
 
+            messageList = new List<string>();
+            messageListView = new ListView(messageList)
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(0),
+                Height = Dim.Fill(0),
+                AllowsMarking = false,
+                CanFocus = true
+            };
             rightPane = new FrameView("Chat")
             {
                 X = 40,
@@ -69,6 +82,7 @@ namespace chat
                 Height = Dim.Percent(82),
                 Title = "Chat messages"
             };
+            rightPane.Add(messageListView);
 
             bottomPane = new FrameView("Bottom")
             {
@@ -188,8 +202,12 @@ namespace chat
             if (args.KeyEvent.Key == Key.Enter)
             {
                 var messageToSend = messageTextBox.Text;
-                commandHandler.HandleInput(messageToSend.ToString());
-                messageTextBox.Text = "";
+
+                if (messageToSend.Length > 0)
+                {
+                    commandHandler.HandleInput(messageToSend.ToString());
+                    messageTextBox.Text = "";
+                }
             }
         }
 
@@ -204,6 +222,12 @@ namespace chat
             {
                 // these were replaced with ActiveUserListChanged but there's gotta be value here
             }
+        }
+
+        protected void OnPublicMessageReceived(PublicMessageReceivedEventArgs args)
+        {
+            messageList.Add($"{args.PublicMessage.From.DisplayName}:{args.PublicMessage.Message}");
+            messageListView.SetNeedsDisplay();
         }
     }
 }

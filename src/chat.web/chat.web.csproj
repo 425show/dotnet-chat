@@ -8,4 +8,8 @@
     <PackageReference Include="microsoft.identity.web" Version="1.9.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\chat.abstractions\chat.abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

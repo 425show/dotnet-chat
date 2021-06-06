@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using chat.abstractions;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace chat
@@ -33,6 +34,11 @@ namespace chat
                 ActiveUserListChanged?.Invoke(new ActiveUserListChangedEventArgs(usernames));
             });
 
+            Connection.On<PublicMessage>("publicMessageReceived", (publicMessage) =>
+            {
+                PublicMessageReceived?.Invoke(new PublicMessageReceivedEventArgs(publicMessage));
+            });
+
             await Connection.StartAsync();
         }
 
@@ -50,12 +56,24 @@ namespace chat
                 await Connection.DisposeAsync();
         }
 
+        public async Task SendPublicMessage(string message)
+        {
+            if (Connection?.State == HubConnectionState.Connected)
+            {
+                await Connection.InvokeAsync("sendPublicMessage", message);
+            }
+        }
+
         public event Action<UserPresenceChangeEventArgs> UserPresenceChanged;
 
         public event Action<ActiveUserListChangedEventArgs> ActiveUserListChanged;
+
+        public event Action<PublicMessageReceivedEventArgs> PublicMessageReceived;
     }
 
     public record UserPresenceChangeEventArgs(string Username, bool IsSignedIn = true);
 
     public record ActiveUserListChangedEventArgs(IEnumerable<string> ActiveUsers);
+
+    public record PublicMessageReceivedEventArgs(PublicMessage PublicMessage);
 }
