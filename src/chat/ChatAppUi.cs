@@ -156,16 +156,20 @@ namespace chat
             {
                 var currentItems = statusBar.Items.ToList();
                 currentItems.RemoveAt(1);
-                currentItems.Insert(1, new StatusItem(Key.F2, "~F2~ Disconnect", async () =>
-                {
-                    await chatHubClient.Disconnect();
-                    SetupStatusBar();
-                }));
+                currentItems.Insert(1, new StatusItem(Key.F2, "~F2~ Disconnect", async () => await OnDisconnectClicked()));
                 statusBar.Items = currentItems.ToArray();
                 statusBar.SetNeedsDisplay();
 
                 await chatHubClient.SignIn();
             }
+        }
+
+        protected async Task OnDisconnectClicked()
+        {
+            await chatHubClient.Disconnect();
+            SetupStatusBar();
+            userList.Clear();
+            userListView.SetNeedsDisplay();
         }
 
         private bool ConfirmQuit()
