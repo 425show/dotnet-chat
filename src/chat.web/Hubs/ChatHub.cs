@@ -25,7 +25,7 @@ namespace chat.web.Hubs
                 username = this.Context.User.Identity.Name
             });
         }
-
+        
         public override Task OnConnectedAsync()
         {
             var username = this.Context.User.Identity.Name;

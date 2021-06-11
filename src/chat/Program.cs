@@ -10,8 +10,8 @@ namespace chat
     {
         static string _accessToken = string.Empty;
         static string _redirectUri = "http://localhost";
-        static string _clientId = "";
-        static string _scope = "";
+        static string _clientId = "e8e31ff4-72d5-4252-8e6d-79d2bb822027";
+        static string _scope = "api://119ee4e7-a68a-4d21-b15e-d3362b47776d/access_as_user";
 
         static async Task Main(string[] args)
         {
