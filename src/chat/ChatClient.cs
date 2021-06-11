@@ -15,12 +15,10 @@ namespace chat
             Instance = new ChatClient();
         }
         
-        public async Task Connect(string accessToken)
+        public async Task Connect()
         {
             _connection = new HubConnectionBuilder()
-                .WithUrl(_hubUrl, options => {
-                    options.AccessTokenProvider = () => Task.FromResult(accessToken);
-                })
+                .WithUrl(_hubUrl)
                 .Build();
 
             await _connection.StartAsync();

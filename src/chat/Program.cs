@@ -15,46 +15,20 @@ namespace chat
 
         static async Task Main(string[] args)
         {
-            IPublicClientApplication app = PublicClientApplicationBuilder
-                .Create(_clientId)
-                .WithRedirectUri(_redirectUri)
-                .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
-                .Build();
-
-            AuthenticationResult result;
-            var accounts = await app.GetAccountsAsync();
-            var scopes = new string[] { _scope };
-
-            try
-            { 
-                result = await app.AcquireTokenSilent(scopes, 
-                    accounts.FirstOrDefault()).ExecuteAsync(); 
-            }
-            catch (MsalUiRequiredException) 
-            { 
-                result = await app.AcquireTokenInteractive(scopes).ExecuteAsync(); 
-            }
-
-            if(result != null)
-            {
-                _accessToken = result.AccessToken;
-            }
-
             while (true)
             {
                 Console.WriteLine("Enter Command:");
 
                 var input = Console.ReadLine();
-                HandleInput(input);
+                await HandleInput(input);
             }
         }
 
-
-        static void HandleInput(string input)
+        static async Task HandleInput(string input)
         {
             if (input.StartsWith("connect", StringComparison.OrdinalIgnoreCase))
             {
-                ConnectCommand.HandleCommand(input, _accessToken).Wait();
+                await ConnectCommand.HandleCommand(input);
             }
             if (input.StartsWith("receive", StringComparison.OrdinalIgnoreCase))
             {

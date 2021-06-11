@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.5" />
-    <PackageReference Include="microsoft.identity.client" Version="4.30.1" />
     <PackageReference Include="Spectre.Console" Version="0.39.0" />
   </ItemGroup>
 
