@@ -5,11 +5,9 @@ using System.Threading.Tasks;
 using chat.web.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Identity.Web;
 
 namespace chat.web
 {
@@ -27,7 +25,6 @@ namespace chat.web
         {
             services.AddRazorPages();
             services.AddSignalR();
-            services.AddMicrosoftIdentityWebApiAuthentication(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,8 +45,6 @@ namespace chat.web
             app.UseStaticFiles();
 
             app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

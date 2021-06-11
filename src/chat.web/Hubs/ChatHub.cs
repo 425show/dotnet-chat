@@ -1,14 +1,9 @@
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Web.Resource;
 
 namespace chat.web.Hubs
 {
-    [Authorize]
-    [RequiredScope("Chat")]
     public class ChatHub : Hub
     {
         private readonly ILogger<ChatHub> logger;
@@ -28,8 +23,7 @@ namespace chat.web.Hubs
 
         public override Task OnConnectedAsync()
         {
-            var username = this.Context.User.Identity.Name;
-            logger.LogInformation($"{username} just logged in and connected");
+            logger.LogInformation("Connection successful");
             return Task.CompletedTask;
         }
     }
