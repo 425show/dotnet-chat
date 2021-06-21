@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using chat.web.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -27,7 +28,13 @@ namespace chat.web
         {
             services.AddRazorPages();
             services.AddSignalR();
-            services.AddMicrosoftIdentityWebApiAuthentication(Configuration);
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddMicrosoftIdentityWebApi(options =>
+            {
+                Configuration.Bind("AzureAdB2C", options);
+                options.TokenValidationParameters.NameClaimType = "name";
+            },
+            options => { Configuration.Bind("AzureAdB2C", options); });
 
             // todo: add custom middleware to make this easier
             services.AddMemoryCache();
