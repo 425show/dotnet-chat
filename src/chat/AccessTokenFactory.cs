@@ -25,12 +25,12 @@ namespace chat
             IPublicClientApplication app = PublicClientApplicationBuilder
                 .Create(_options.ClientId)
                 .WithRedirectUri(_options.RedirectUrl)
-                .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
+                .WithB2CAuthority(_options.Authority)
                 .Build();
 
             AuthenticationResult result;
             var accounts = await app.GetAccountsAsync();
-            var scopes = new string[] { _options.ChatScope, "User.Read" };
+            var scopes = new string[] { _options.ChatScope };
 
             try
             {
@@ -39,9 +39,6 @@ namespace chat
             catch (MsalUiRequiredException)
             {
                 result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
-
-                // for worker it'd be
-                // string redirectUri = "https://myapp.azurewebsites.net"; IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(clientId) .WithClientSecret(clientSecret) .WithRedirectUri(redirectUri ) .Build();
             }
 
             if (result != null)
